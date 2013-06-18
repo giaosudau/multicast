@@ -18,33 +18,30 @@ client.bind(PORT, function() {
 	client.addMembership(MULTICAST_IP_ADDRESS, HOST);
 });
 
-var fileName = '/data/'
+var fileName = ''
 var CHUNK_SIZE = 512
 var fs = require('fs')
+
 client.on('message', function(message, remote) {
-	// console.log('A: Epic Command Received. Preparing Relay.');
-	// console.log('B: From: ' + remote.address + ':' + remote.port + ' - ' + message);
 	if (message[0] == 1 && message[1] == 1 && message[2] == 1 && message[3] == 1) {
-		fileName += message.toString('utf-8', 4)
-		console.log('fileName ==', fileName)
-	} else if (fileName.length > 6 && message[0] == 0 && message[1] == 3) {
+		fileName = '/data/' +  message.toString('utf-8', 4)
+	} else if (fileName!='' && message[0] == 0 && message[1] == 3) {
 		var block = (parseInt(message[2]) << 8) + parseInt(message[3]);
-		console.log('block -- ', block)
+		console.log('block ------ ', block)
 		if (block != 0) {
-			// fs.writeSync(fd, buffer, offset, length, position)
-			// fs.writeSync('/data/' + fileName, message, 4, CHUNK_SIZE, (block - 1) * CHUNK_SIZE)
 			fs.open(fileName, 'a', function(e, id) {
-				console.log('length', message.length)
 				if (4 + CHUNK_SIZE > message.length) {
-					fs.write(id, message, 4, message.length, (block - 1) * CHUNK_SIZE, function() {
+					fs.write(id, message, 4, message.length-4, (block - 1) * CHUNK_SIZE, function() {
 						fs.close(id, function() {
 							console.log('file closed', block);
 						});
 					});
 				} else {
+					console.log((block - 1) * CHUNK_SIZE)
 					fs.write(id, message, 4, CHUNK_SIZE, (block - 1) * CHUNK_SIZE, function() {
 						fs.close(id, function() {
 							console.log('file closed', block);
+							udpserver.send(block+1)
 						});
 					});
 				}

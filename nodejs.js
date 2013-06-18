@@ -13,7 +13,7 @@ var express = require('express'),
 
 // UDP
 var MULTICAST_IP_ADDRESS = '230.185.192.108'
-var TTL = 128
+var TTL = 255
 var PORT = 8088
 var dgram = require('dgram');
 var udpserver = dgram.createSocket("udp4");
@@ -184,8 +184,15 @@ app.post('/upload', function(request, response, next) {
                 else
                     number_of_block = message / CHUNK_SIZE;
 
+                var flag = True
+                while (flag==True){
+                    
+                }
+
+
                 for (var block = 1; block <= number_of_block; block++) {
                     sendBlock(FILEPATH, block)
+                    // sleep(30);
                     console.log('block --', block)
                 }
             }
