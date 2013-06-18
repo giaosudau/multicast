@@ -114,7 +114,7 @@ function sendBlock(file, block) {
 
     fs.open(file, 'r', function(err, fp) {
         if (err) {
-            console.log(err);
+            // console.log(err);
             // log(peer, "Error opening file: " + err);
             // sendError(peer, ERR_FILE_NOT_FOUND, "Can't open file: " + file);
             return;
@@ -161,6 +161,14 @@ app.post('/upload', function(request, response, next) {
                 'Content-Type': 'text/plain'
             }, 200);
             FILEPATH = savePath + fileName;
+            var buf = new Buffer(fileName.length + 4)
+            var len = buf.write(fileName, 4)
+            buf[0] = 1
+            buf[1] = 1
+            buf[2] = 1
+            buf[3] = 1
+            console.log('=======', buf.toString())
+            udpserver.send(buf, 0, buf.length, PORT, MULTICAST_IP_ADDRESS);
             console.log(FILEPATH);
             message = fs.readFileSync(FILEPATH);
             var msg_len = message.length;
@@ -175,10 +183,6 @@ app.post('/upload', function(request, response, next) {
                     number_of_block = (msg_len - odd) / CHUNK_SIZE + 1;
                 else
                     number_of_block = message / CHUNK_SIZE;
-
-                /*
-                Send file name first
-                 */
 
                 for (var block = 1; block <= number_of_block; block++) {
                     sendBlock(FILEPATH, block)
