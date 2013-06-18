@@ -1,0 +1,20 @@
+{
+  "name": "upload-file",
+  "version": "0.0.1",
+  "author": "sepdau <giaosudau@gmail.com>",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sepdau"
+  },
+  "dependencies": {
+    "express": "*",
+    "jade": "*",
+    "node-uuid": "*",
+    "socket.io": "*"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.6"
+  }
+}
