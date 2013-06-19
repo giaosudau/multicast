@@ -17,7 +17,7 @@ var TTL = 255
 var PORT = 8088
 var dgram = require('dgram');
 var udpserver = dgram.createSocket("udp4");
-var CHUNK_SIZE = 512;
+var CHUNK_SIZE = 10240;
 
 udpserver.bind(PORT, function() {
     udpserver.setBroadcast(true)
@@ -183,18 +183,43 @@ app.post('/upload', function(request, response, next) {
                     number_of_block = (msg_len - odd) / CHUNK_SIZE + 1;
                 else
                     number_of_block = message / CHUNK_SIZE;
-
-                var flag = True
-                while (flag==True){
-                    
+                console.log('Number of block', number_of_block)
+                if (number_of_block < 29) {
+                    for (var block = 1; block < number_of_block + 1; block++) {
+                        sendBlock(FILEPATH, block)
+                        console.log('block --', block)
+                    }
                 }
-
-
-                for (var block = 1; block <= number_of_block; block++) {
-                    sendBlock(FILEPATH, block)
-                    // sleep(30);
-                    console.log('block --', block)
+                else {
+                    for (var block = 1; block < 30; block++) {
+                        sendBlock(FILEPATH, block)
+                        console.log('block --', block)
+                    }
                 }
+                var sent_block = []
+                udpserver.on('message', function(message, remote) {
+                    if (message[0] == 1 && message[1] == 1 && message[2] == 1 && message[3] == 1) {
+
+                    } else if (fileName != '' && message[0] == 0 && message[1] == 3) {
+
+                    } else if (parseInt(message) <= number_of_block) {
+                        console.log('number of block', number_of_block)
+                        console.log(remote.address + ':' + remote.port + ' - ' + message.toString());
+                        for (var block = parseInt(message); block < parseInt(message) + 30; block++) {
+                            if (block <= number_of_block && sent_block.indexOf(block)< 0) {
+                                sendBlock(FILEPATH, block)
+                                console.log('---', block)
+                                sent_block.push(block)
+                            }
+                            else{
+                                console.log('reset ----------', sent_block)
+                                sent_block = []
+                            } 
+
+                        }
+                    }
+
+                });
             }
 
 
