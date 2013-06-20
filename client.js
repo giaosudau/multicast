@@ -5,6 +5,11 @@ var PORT = '8088'
 var HOST = '192.168.1.33';
 var dgram = require('dgram');
 var client = dgram.createSocket('udp4');
+var serverIp;
+function send(msg) {
+	msg = new Buffer(msg, 'utf-8')
+	client.send(msg,0, msg.length, PORT, serverIp);
+};
 
 client.on('listening', function() {
 	var address = client.address();
@@ -21,39 +26,48 @@ client.bind(PORT, function() {
 var fileName = ''
 var CHUNK_SIZE = 10240
 var fs = require('fs')
-var sent_block = []
-var closed = 0
+var fd
+var blockArray = range(1,30)
+var missArray =[]
 client.on('message', function(message, remote) {
+	//console.log('mess:',remote);
+	serverIp = remote['address'];
 	if (message[0] == 1 && message[1] == 1 && message[2] == 1 && message[3] == 1) {
-		fileName = '/data/' + message.toString('utf-8', 4)
-		closed = 0
-	} else if (fileName != '' && message[0] == 0 && message[1] == 3) {
+		console.log(message);
+		fileName = 'data/' +  message.toString('utf-8', 4)
+		console.log(fileName);
+		fd = fs.openSync(fileName, 'w');
+	} else if (fileName!='' && message[0] == 0 && message[1] == 3) {
 		var block = (parseInt(message[2]) << 8) + parseInt(message[3]);
-
-		if ((block % 29 == 0) && (sent_block.indexOf(block) < 0)) {
-			var block_send = block + 1
-			console.log('=============================', sent_block.indexOf(block))
-			console.log('send me next block =============', block_send)
-			var block_number = new Buffer(block_send.toString());
-			client.send(block_number, 0, block_number.length, 8088, MULTICAST_IP_ADDRESS);
-			sent_block.push(block)
-			console.log('sent ---------------', sent_block)
-		}
-		if (block != 0 && !closed) {
-			fs.open(fileName, 'a+', function(e, id) {
+		console.log('block ------ ', block)
+		if (block != 0) {
+			blockArray.splice( blockArray.indexOf(block),1);
+			//console.log(missArray);
+			fs.open(fileName, 'a', function(e, id) {
 				if (4 + CHUNK_SIZE > message.length) {
-					fs.write(id, message, 4, message.length - 4, (block - 1) * CHUNK_SIZE, function() {
-						fs.close(id, function() {
-							console.log('file -----------closed', block);
-							sent_block = []
-							closed = 1
+					fs.write(fd, message, 4, message.length-4, (block - 1) * CHUNK_SIZE, function() {
+						fs.close(fd, function() {
+							console.log('file closed', block);
+							send("miss block:"+missArray);
 						});
 					});
 				} else {
+					console.log("message length:", message.length)
 					console.log((block - 1) * CHUNK_SIZE)
-					fs.write(id, message, 4, CHUNK_SIZE, (block - 1) * CHUNK_SIZE, function() {
-						fs.close(id, function() {
-							console.log('file closed', block);
+				
+					fs.write(fd, message, 4, CHUNK_SIZE, (block - 1) * CHUNK_SIZE, function() {
+						fs.close(fd, function() {
+							console.log('1file closed', block);
+							if (block % 30 ==0)
+							{
+								if (blockArray.length > 0)
+								{
+									missArray =missArray.concat(blockArray);
+								}
+								blockArray = range(block+1,30)
+							}
+							
+							//udpserver.send(block+1)
 						});
 					});
 				}
@@ -64,3 +78,16 @@ client.on('message', function(message, remote) {
 	// console.log(data)
 
 });
+
+function range(start, count) {
+    if(arguments.length == 1) {
+        count = start;
+        start = 0;
+    }
+
+    var foo = [];
+    for (var i = 0; i < count; i++) {
+        foo.push(start + i);
+    }
+    return foo;
+}

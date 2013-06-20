@@ -11,13 +11,18 @@ var express = require('express'),
     server = http.createServer(app),
     io = require('socket.io').listen(server);
 
+
 // UDP
-var MULTICAST_IP_ADDRESS = '230.185.192.108'
-var TTL = 255
-var PORT = 8088
+//var sleep = require('sleep');
 var dgram = require('dgram');
+var TTL = 255
+var FILEPATH
+var missArray = [];
+var MULTICAST_IP_ADDRESS = '230.185.192.108'
+var PORT = 8088
 var udpserver = dgram.createSocket("udp4");
 var CHUNK_SIZE = 10240;
+
 
 udpserver.bind(PORT, function() {
     udpserver.setBroadcast(true)
@@ -26,14 +31,23 @@ udpserver.bind(PORT, function() {
     console.log("UDP Server On %s for Sending File", PORT);
 })
 
-var news = [
-        "Borussia Dortmund wins German championship",
-        "Tornado warning for the Bay Area",
-        "More rain for the weekend",
-        "Android tablets take over the world",
-        "iPad2 sold out",
-        "Nation's rappers down to last two samples"
-];
+udpserver.on("message",function(message, remote) 
+{ 
+	message =  message.toString('utf-8', 0, message.length)
+	if (message.indexOf("miss block:") != -1)
+		{
+			block = message.substring(11,message.length);
+			block = block.split(",");
+			for (i=0;i<block.length;i++)
+			{
+				continueSession(FILEPATH, block[i]);
+				console.log("send again", block[i]);
+			}
+			//console.log("send again", block);
+			//continueSession(FILEPATH, block)
+			
+		}
+});
 // setInterval(broadcastNew, 3000);
 
 function broadcastNew() {
@@ -98,11 +112,11 @@ function startSession(peer, file) {
     sendBlock(peer, file, 1);
 }
 
-function continueSession(peer, block) {
-    var key = peer.address + ":" + peer.port;
-    var s = sessions[key];
-    if (s !== undefined) {
-        sendBlock(peer, s.file, block);
+function continueSession(file, block) {
+    //var key = peer.address + ":" + peer.port;
+    //var s = sessions[key];
+    if (file !== undefined) {
+        sendBlock(file, block);
     } else {
         // log(peer, 'Ack for unknown session');
     }
@@ -183,43 +197,20 @@ app.post('/upload', function(request, response, next) {
                     number_of_block = (msg_len - odd) / CHUNK_SIZE + 1;
                 else
                     number_of_block = message / CHUNK_SIZE;
-                console.log('Number of block', number_of_block)
-                if (number_of_block < 29) {
-                    for (var block = 1; block < number_of_block + 1; block++) {
-                        sendBlock(FILEPATH, block)
-                        console.log('block --', block)
-                    }
+
+
+
+                for (var block = 1; block <= number_of_block; block++) {
+                   sendBlock(FILEPATH, block)
+                    // sleep(30);
+		   /* if (block % 1000 ==0)
+		    {
+			sleep.sleep(3);
+			console.log("sleep");
+			
+		    }*/
+		    console.log('block --', block)
                 }
-                else {
-                    for (var block = 1; block < 30; block++) {
-                        sendBlock(FILEPATH, block)
-                        console.log('block --', block)
-                    }
-                }
-                var sent_block = []
-                udpserver.on('message', function(message, remote) {
-                    if (message[0] == 1 && message[1] == 1 && message[2] == 1 && message[3] == 1) {
-
-                    } else if (fileName != '' && message[0] == 0 && message[1] == 3) {
-
-                    } else if (parseInt(message) <= number_of_block) {
-                        console.log('number of block', number_of_block)
-                        console.log(remote.address + ':' + remote.port + ' - ' + message.toString());
-                        for (var block = parseInt(message); block < parseInt(message) + 30; block++) {
-                            if (block <= number_of_block && sent_block.indexOf(block)< 0) {
-                                sendBlock(FILEPATH, block)
-                                console.log('---', block)
-                                sent_block.push(block)
-                            }
-                            else{
-                                console.log('reset ----------', sent_block)
-                                sent_block = []
-                            } 
-
-                        }
-                    }
-
-                });
             }
 
 
@@ -235,3 +226,6 @@ app.post('/upload', function(request, response, next) {
 // Starting the express server
 app.listen(settings.node_port, '127.0.0.1');
 console.log("Express server listening on %s:%d for uploads", '127.0.0.1', settings.node_port);
+
+
+
