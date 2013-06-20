@@ -8,9 +8,9 @@ var express = require('express'),
     url = require('url'),
     app = express(),
     http = require('http'),
-    server = http.createServer(app),
+    server = http.createServer(app);
     io = require('socket.io').listen(server);
-
+ 
 
 // UDP
 //var sleep = require('sleep');
@@ -22,7 +22,8 @@ var MULTICAST_IP_ADDRESS = '230.185.192.108'
 var PORT = 8088
 var udpserver = dgram.createSocket("udp4");
 var CHUNK_SIZE = 10240;
-
+var SuccessClients = [];
+var UnsuccessClients = [];
 
 udpserver.bind(PORT, function() {
     udpserver.setBroadcast(true)
@@ -47,6 +48,14 @@ udpserver.on("message",function(message, remote)
 			//continueSession(FILEPATH, block)
 			
 		}
+	else if (message.indexOf("Receive Completed") != -1)
+	{
+		SuccessClients.push(remote['address']);
+	}
+	else if (message.indexOf("Receive Failed") != -1)
+	{
+		UnSuccessClients.push(remote['address']);
+	}
 });
 // setInterval(broadcastNew, 3000);
 
@@ -157,7 +166,8 @@ app.post('/upload', function(request, response, next) {
     var savePath = settings.uploadPath;
 
     var fileName = request.files.qqfile.name;
-
+    SuccessClients = [];
+    UnsuccessClients = [];
     //after upload, rename the file and respond to Fine Uploader to notify it of success
     fs.rename(request.files.qqfile.path, savePath + fileName, function(err) {
         if (err != null) {

@@ -9,6 +9,7 @@ var serverIp;
 function send(msg) {
 	msg = new Buffer(msg, 'utf-8')
 	client.send(msg,0, msg.length, PORT, serverIp);
+	console.log(msg);
 };
 
 client.on('listening', function() {
@@ -48,6 +49,11 @@ client.on('message', function(message, remote) {
 					fs.write(fd, message, 4, message.length-4, (block - 1) * CHUNK_SIZE, function() {
 						fs.close(fd, function() {
 							console.log('file closed', block);
+							for(i=0;i<missArray.length;i++)
+							{
+								if (missArray[i]>block)
+									missArray.splice( i,1);
+							}
 							send("miss block:"+missArray);
 						});
 					});
@@ -63,6 +69,14 @@ client.on('message', function(message, remote) {
 								if (blockArray.length > 0)
 								{
 									missArray =missArray.concat(blockArray);
+								}
+								else if (missArray.length > 0)
+								{
+									missArray.splice( missArray.indexOf(block),1);
+								}
+								else if (missArray.length == 0)
+								{
+									send("Receive Completed");
 								}
 								blockArray = range(block+1,30)
 							}
