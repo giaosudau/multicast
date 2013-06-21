@@ -62,7 +62,7 @@ udpserver.on("message",function(message, remote)
 	{
 		//SuccessClients.push(remote['address']);
 		console.log("rec");
-		io.sockets.emit('news',{ReceiveInfo: remote['address']+": completed"});
+		io.sockets.emit('news',{ReceiveInfo: remote['address']+": received"});
 		
 	}
 	else if (message.indexOf("Receive Failed") != -1)

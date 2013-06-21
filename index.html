@@ -10,7 +10,7 @@
 	  socket.on('news', function (data) {
 	    if (data['ReceiveInfo'])
 	    {alert(data['ReceiveInfo']);
-	       $(".qq-upload-success").append(data['ReceiveInfo']);
+	       $("ul li:last").append(data['ReceiveInfo']);
 	     }
 	    //alert(data['ReceiveInfo']);
 	    console.log(data);
