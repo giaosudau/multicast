@@ -9,7 +9,7 @@ var serverIp;
 function send(msg) {
 	console.log("send:",msg);
 	msg = new Buffer(msg, 'utf-8')
-	client.send(msg,0, msg.length, PORT, serverIp);
+	client.send(msg,0, msg.length, PORT, MULTICAST_IP_ADDRESS);
 };
 
 client.on('listening', function() {

@@ -22,12 +22,17 @@ var MULTICAST_IP_ADDRESS = '230.185.192.108'
 var PORT = 8088
 var udpserver = dgram.createSocket("udp4");
 var CHUNK_SIZE = 10240;
-var SuccessClients = [];
-var UnsuccessClients = [];
+//var SuccessClients = [];
+//var UnsuccessClients = [];
 
 //var io = require('socket.io').listen(80);
 
-
+io.sockets.on('connection', function (socket) {
+  socket.emit('news', { hello: 'world' });
+  socket.on('my other event', function (data) {
+    console.log(data);
+  });
+});
 
 udpserver.bind(PORT, function() {
     udpserver.setBroadcast(true)
@@ -55,17 +60,15 @@ udpserver.on("message",function(message, remote)
 		}
 	else if (message.indexOf("Receive Completed") != -1)
 	{
-		SuccessClients.push(remote['address']);
-		io.sockets.on('connection', function (socket) {
-		  socket.emit('news', { hello: 'world' });
-		  socket.on('my other event', function (data) {
-		    console.log(data);
-		  });
-		});
+		//SuccessClients.push(remote['address']);
+		console.log("rec");
+		io.sockets.emit('news',{ReceiveInfo: remote['address']+": completed"});
+		
 	}
 	else if (message.indexOf("Receive Failed") != -1)
 	{
-		UnSuccessClients.push(remote['address']);
+		//UnSuccessClients.push(remote['address']);
+		io.sockets.emit('news',{ReceiveInfo: remote['address']+": failed"});
 	}
 });
 // setInterval(broadcastNew, 3000);
