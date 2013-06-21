@@ -1,0 +1,40 @@
+<html>
+<head>
+   <title>File Uploader</title>
+   <link rel="stylesheet" href="fine-uploader-jquery/fineuploader-3.6.4.css">
+   <script src="jquery-1.6.1.min.js"></script><script src="fine-uploader-jquery/jquery.fineuploader-3.6.4.min.js"></script>
+   <script src="/socket.io/socket.io.js"></script>
+   <script>
+	  var socket = io.connect();
+	  socket.on('news', function (data) {
+	    console.log(data);
+	    socket.emit('my other event', { my: 'data' });
+	  });
+   </script>
+</head>
+<body>
+   <div class="container">
+     <div class="row">
+      <h3>File Uploader Node Example</h3>
+         <div id="jquery-wrapped-fine-uploader">
+           <script type="text/javascript">jQuery(document).ready(function() {
+		  jQuery('#jquery-wrapped-fine-uploader').fineUploader({
+		    debug: true,
+		    request: {
+		      endpoint: '/upload',
+		      params: {},
+		      chunking: {
+			enabled: true,
+		      },
+		      resume: {
+			enabled: true,
+		      },
+		    }, 
+		  });
+		});
+	   </script>
+  	</div>
+    </div>
+   </div>
+</body>
+</html>

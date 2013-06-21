@@ -7,9 +7,9 @@ var dgram = require('dgram');
 var client = dgram.createSocket('udp4');
 var serverIp;
 function send(msg) {
+	console.log("send:",msg);
 	msg = new Buffer(msg, 'utf-8')
 	client.send(msg,0, msg.length, PORT, serverIp);
-	console.log(msg);
 };
 
 client.on('listening', function() {
@@ -54,7 +54,12 @@ client.on('message', function(message, remote) {
 								if (missArray[i]>block)
 									missArray.splice( i,1);
 							}
-							send("miss block:"+missArray);
+							if (missArray.length == 0)
+							{
+								send("Receive Completed");
+								console.log("receive completed");
+							}
+							else { send("miss block:"+missArray); }
 						});
 					});
 				} else {

@@ -11,7 +11,7 @@ var express = require('express'),
     server = http.createServer(app);
     io = require('socket.io').listen(server);
  
-
+server.listen(8080);
 // UDP
 //var sleep = require('sleep');
 var dgram = require('dgram');
@@ -25,6 +25,10 @@ var CHUNK_SIZE = 10240;
 var SuccessClients = [];
 var UnsuccessClients = [];
 
+//var io = require('socket.io').listen(80);
+
+
+
 udpserver.bind(PORT, function() {
     udpserver.setBroadcast(true)
     udpserver.setMulticastTTL(TTL)
@@ -35,6 +39,7 @@ udpserver.bind(PORT, function() {
 udpserver.on("message",function(message, remote) 
 { 
 	message =  message.toString('utf-8', 0, message.length)
+	console.log("message",message);
 	if (message.indexOf("miss block:") != -1)
 		{
 			block = message.substring(11,message.length);
@@ -51,6 +56,12 @@ udpserver.on("message",function(message, remote)
 	else if (message.indexOf("Receive Completed") != -1)
 	{
 		SuccessClients.push(remote['address']);
+		io.sockets.on('connection', function (socket) {
+		  socket.emit('news', { hello: 'world' });
+		  socket.on('my other event', function (data) {
+		    console.log(data);
+		  });
+		});
 	}
 	else if (message.indexOf("Receive Failed") != -1)
 	{
@@ -86,7 +97,7 @@ var settings = {
 };
 
 app.set('views', __dirname + '/views');
-app.set('view engine', 'jade');
+//app.set('view engine', 'jade');
 
 app.use(express.static(__dirname + '/public'));
 
@@ -95,7 +106,8 @@ app.use(express.bodyParser({
 }));
 
 app.get('/', function(request, response) {
-    response.render('index');
+   // response.render('index');
+	response.sendfile('index.html');
 })
 
 var opcodes = {
@@ -234,7 +246,7 @@ app.post('/upload', function(request, response, next) {
 
 
 // Starting the express server
-app.listen(settings.node_port, '127.0.0.1');
+//app.listen(settings.node_port, '127.0.0.1');
 console.log("Express server listening on %s:%d for uploads", '127.0.0.1', settings.node_port);
 
 
