@@ -1,5 +1,6 @@
 /**
- *
+ * author: Le Trung Chanh, Nguyen Gia Luan
+ * 
  */
 var express = require('express'),
     fs = require('fs'),
@@ -9,11 +10,9 @@ var express = require('express'),
     app = express(),
     http = require('http'),
     server = http.createServer(app);
-    io = require('socket.io').listen(server);
- 
-server.listen(8080);
-// UDP
-//var sleep = require('sleep');
+io = require('socket.io').listen(server);
+
+// Create UDP Server
 var dgram = require('dgram');
 var TTL = 255
 var FILEPATH
@@ -22,85 +21,47 @@ var MULTICAST_IP_ADDRESS = '230.185.192.108'
 var PORT = 8088
 var udpserver = dgram.createSocket("udp4");
 var CHUNK_SIZE = 10240;
-//var SuccessClients = [];
-//var UnsuccessClients = [];
 
-//var io = require('socket.io').listen(80);
-
-io.sockets.on('connection', function (socket) {
-  socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
-    console.log(data);
-  });
-});
-
+// Set mulicast for UDP Server
 udpserver.bind(PORT, function() {
     udpserver.setBroadcast(true)
     udpserver.setMulticastTTL(TTL)
     udpserver.addMembership(MULTICAST_IP_ADDRESS)
     console.log("UDP Server On %s for Sending File", PORT);
 })
+// Get Message from receiver
+udpserver.on("message", function(message, remote) {
+    message = message.toString('utf-8', 0, message.length)
+    console.log("message", message);
+    if (message.indexOf("miss block:") != -1) {
+        block = message.substring(11, message.length);
+        block = block.split(",");
+        for (i = 0; i < block.length; i++) {
+            continueSession(FILEPATH, block[i]);
+            console.log("send again", block[i]);
+        }
 
-udpserver.on("message",function(message, remote) 
-{ 
-	message =  message.toString('utf-8', 0, message.length)
-	console.log("message",message);
-	if (message.indexOf("miss block:") != -1)
-		{
-			block = message.substring(11,message.length);
-			block = block.split(",");
-			for (i=0;i<block.length;i++)
-			{
-				continueSession(FILEPATH, block[i]);
-				console.log("send again", block[i]);
-			}
-			//console.log("send again", block);
-			//continueSession(FILEPATH, block)
-			
-		}
-	else if (message.indexOf("Receive Completed") != -1)
-	{
-		//SuccessClients.push(remote['address']);
-		console.log("rec");
-		io.sockets.emit('news',{ReceiveInfo: remote['address']+": received"});
-		
-	}
-	else if (message.indexOf("Receive Failed") != -1)
-	{
-		//UnSuccessClients.push(remote['address']);
-		io.sockets.emit('news',{ReceiveInfo: remote['address']+": failed"});
-	}
-});
-// setInterval(broadcastNew, 3000);
-
-function broadcastNew() {
-    fs.readFile('/etc/passwd', function(err, data) {
-        if (err) throw err;
-        console.log('length', data.length);
-
-        udpserver.send(data, 0, data.length, PORT, MULTICAST_IP_ADDRESS, function(err, bytes) {
-            console.log('Sent ---- ');
+    } else if (message.indexOf("Receive Completed") != -1) {
+        console.log("rec");
+        io.sockets.emit('news', {
+            ReceiveInfo: remote['address'] + ": received"
         });
 
-    });
+    } else if (message.indexOf("Receive Failed") != -1) {
+        io.sockets.emit('news', {
+            ReceiveInfo: remote['address'] + ": failed"
+        });
+    }
+});
 
-
-    // var message = new Buffer(news[Math.floor(Math.random()*news.length)]);
-    // udpserver.send(message, 0, message.length, PORT, MULTICAST_IP_ADDRESS);
-    // console.log("Sent " + message + " to the wire...");
-    //server.close();
-}
-
-
-
-// Settings
+// Settings expressjs 
 var settings = {
     node_port: process.argv[2] || 8000,
     uploadPath: __dirname + '/uploads/'
 };
 
 app.set('views', __dirname + '/views');
-//app.set('view engine', 'jade');
+app.set('view engine', 'jade');
 
 app.use(express.static(__dirname + '/public'));
 
@@ -109,10 +70,9 @@ app.use(express.bodyParser({
 }));
 
 app.get('/', function(request, response) {
-   // response.render('index');
-	response.sendfile('index.html');
+    response.render('index');
 })
-
+// Signal 
 var opcodes = {
     OPCODE_TEXT: 1,
     OPCODE_WRQ: 2,
@@ -121,49 +81,26 @@ var opcodes = {
     OPCODE_ERROR: 5
 };
 
-
-function clearSession(peer) {
-    var key = peer.address + ":" + peer.port;
-    delete sessions[key];
-}
-
-function startSession(peer, file) {
-    var key = peer.address + ":" + peer.port;
-    sessions[key] = {
-        'peer': peer,
-        'file': file
-    };
-    sendBlock(peer, file, 1);
-}
-
 function continueSession(file, block) {
-    //var key = peer.address + ":" + peer.port;
-    //var s = sessions[key];
     if (file !== undefined) {
         sendBlock(file, block);
     } else {
-        // log(peer, 'Ack for unknown session');
+        console.log('Ack for unknown session');
     }
 }
 
 
 function sendBlock(file, block) {
-    // log(peer, 'Sending block ' + block + " of " + file);
-
     fs.open(file, 'r', function(err, fp) {
         if (err) {
-            // console.log(err);
-            // log(peer, "Error opening file: " + err);
-            // sendError(peer, ERR_FILE_NOT_FOUND, "Can't open file: " + file);
+            console.log("Can't open file: ", file);
             return;
         }
         var buf = new Buffer(4 + CHUNK_SIZE);
         fs.read(fp, buf, 4, CHUNK_SIZE, (block - 1) * CHUNK_SIZE, function(err, bytesRead) {
             if (err) {
-                // log(peer, "Error reading file: " + err);
-                // sendError(peer, ERR_UNDEFINED, err);
-                // return;
-                // console.log(err);
+                console.log('Error reading file: ', err)
+                return;
             }
             buf[0] = 0;
             buf[1] = opcodes.OPCODE_DATA;
@@ -223,34 +160,30 @@ app.post('/upload', function(request, response, next) {
                 else
                     number_of_block = message / CHUNK_SIZE;
 
-
-
                 for (var block = 1; block <= number_of_block; block++) {
-                   sendBlock(FILEPATH, block)
-                    // sleep(30);
-		   /* if (block % 1000 ==0)
-		    {
-			sleep.sleep(3);
-			console.log("sleep");
-			
-		    }*/
-		    console.log('block --', block)
+                    sendBlock(FILEPATH, block)
+                    console.log('block --', block)
                 }
             }
-
 
         }
     })
 
 
-
 });
 
 
+// Starting the HTTP server
+server.listen(settings.node_port, '127.0.0.1');
 
-// Starting the express server
-//app.listen(settings.node_port, '127.0.0.1');
+// send to web interface
+io.sockets.on('connection', function(socket) {
+    socket.emit('news', {
+        hello: 'world'
+    });
+    socket.on('my other event', function(data) {
+        console.log(data);
+    });
+});
+
 console.log("Express server listening on %s:%d for uploads", '127.0.0.1', settings.node_port);
-
-
-

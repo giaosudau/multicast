@@ -31,7 +31,6 @@ var fd
 var blockArray = range(1,30)
 var missArray =[]
 client.on('message', function(message, remote) {
-	//console.log('mess:',remote);
 	serverIp = remote['address'];
 	if (message[0] == 1 && message[1] == 1 && message[2] == 1 && message[3] == 1) {
 		console.log(message);
@@ -43,7 +42,6 @@ client.on('message', function(message, remote) {
 		console.log('block ------ ', block)
 		if (block != 0) {
 			blockArray.splice( blockArray.indexOf(block),1);
-			//console.log(missArray);
 			fs.open(fileName, 'a', function(e, id) {
 				if (4 + CHUNK_SIZE > message.length) {
 					fs.write(fd, message, 4, message.length-4, (block - 1) * CHUNK_SIZE, function() {
@@ -85,8 +83,7 @@ client.on('message', function(message, remote) {
 								}
 								blockArray = range(block+1,30)
 							}
-							
-							//udpserver.send(block+1)
+
 						});
 					});
 				}
@@ -94,7 +91,6 @@ client.on('message', function(message, remote) {
 
 		}
 	}
-	// console.log(data)
 
 });
 

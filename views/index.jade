@@ -1,32 +1,40 @@
 !!!
 html
   head
-    block head
-      title File Uploader
-      link(rel='stylesheet', href='fine-uploader-jquery/fineuploader-3.6.4.css')
-      script(src='jquery-1.6.1.min.js')
-      script(src='fine-uploader-jquery/jquery.fineuploader-3.6.4.min.js')
-      
+    title File Uploader
+    link(rel='stylesheet', href='fine-uploader-jquery/fineuploader-3.6.4.css')
+    script(src='jquery-1.6.1.min.js')
+    script(src='fine-uploader-jquery/jquery.fineuploader-3.6.4.min.js')
+    script(src='/socket.io/socket.io.js')
+    script
+      var socket = io.connect();
+      socket.on('news', function (data) {
+      if (data['ReceiveInfo'])
+      {
+      $("ul li:last").append(data['ReceiveInfo']);
+      }
+      console.log(data);
+      socket.emit('my other event', { my: 'data' });
+      });
   body
-    block content
-      div.container
-        div.row
-          h3 File Uploader Node Example
-          #jquery-wrapped-fine-uploader
-            script(type='text/javascript')
-              jQuery(document).ready(function() {
-                jQuery('#jquery-wrapped-fine-uploader').fineUploader({
-                  debug: true,
-                  request: {
-                    endpoint: '/upload',
-                    params: {},
-                    chunking: {
-                      enabled: true,
-                    },
-                    resume: {
-                      enabled: true,
-                    },
-                  }, 
-                });
-              });
-
+    .container
+      .row
+        h3 File Uploader Node Example
+        #jquery-wrapped-fine-uploader
+          script(type='text/javascript')
+            jQuery(document).ready(function() {
+            jQuery('#jquery-wrapped-fine-uploader').fineUploader({
+            debug: true,
+            request: {
+            endpoint: '/upload',
+            params: {},
+            chunking: {
+            enabled: true,
+            },
+            resume: {
+            enabled: true,
+            },
+            },
+            });
+            });
+    #1
