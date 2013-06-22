@@ -1,16 +1,15 @@
 {
-  "name": "upload-file",
+  "name": "Multicast sendfile",
   "version": "0.0.1",
   "author": "sepdau <giaosudau@gmail.com>",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sepdau"
+    "url": "https://github.com/sepdau/multicast"
   },
   "dependencies": {
     "express": "*",
     "jade": "*",
-    "node-uuid": "*",
     "socket.io": "*"
   },
   "license": "MIT",

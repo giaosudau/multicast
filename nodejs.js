@@ -4,9 +4,6 @@
  */
 var express = require('express'),
     fs = require('fs'),
-    util = require('util'),
-    uuid = require('node-uuid'),
-    url = require('url'),
     app = express(),
     http = require('http'),
     server = http.createServer(app);
